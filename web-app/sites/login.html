@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuxeryLoom</title>
+    <link rel="icon" type="image/vnd.icon" href="../pictures/favicon.ico">
+    <link rel="stylesheet" type="text/css" href="../style.css">
+    <script>
+        async function login() {
+            const email = document.querySelector('input[type="email"]').value;
+            const password = document.querySelector('input[type="password"]').value;
+
+            const response = await fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                window.location.href = '/';
+            } else {
+                alert('Login fehlgeschlagen: ' + result.message);
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <header>
+        <div id="logo">
+            <a href="../">
+                <img src="../pictures/Logo.png" alt="Logo">
+            </a>
+        </div>
+        <nav id="main-navigation">
+            <ul>
+                <li><a href="../">Home</a></li>
+                <li><a href="../#trending">Trending</a></li>
+                <li><a href="../#products">Produkte</a></li>
+                <li><a href="../#contact">Kontakt</a></li>
+                <li><a href="#login">Login</a></li>
+            </ul>
+        </nav>
+        <div id="headertext">
+            <h1>LuxeryLoom</h1>
+        </div>
+    </header>
+
+    <section id="banner">
+        <h1>Werde ein Teil von</h1>
+        <h2>Style in Elegance</h2>
+        <a href="#login">
+            <img class="pfeil" src="../pictures/pfeil.png" alt="Pfeil">
+        </a>
+    </section>
+
+    <section id="login">
+        <h3>Login</h3>
+        <hr>
+        <form onsubmit="return false;">
+            <input class="eingabe" type="email" tabindex="1" placeholder="E-mail"><br>
+            <input class="eingabe" type="password" tabindex="2" placeholder="Passwort"><br>
+            <button class="button" type="button" onclick="login()">Login</button>
+        </form>
+    </section>
+
+    <footer>
+        <p>&copy; 2024 LuxeryLoom</p>
+        <nav id="footer-navigation">
+            <ul>
+                <li><a href="impressum.html">Impressum</a></li>
+                <li><a href="datenschutz.html">Datenschutz</a></li>
+            </ul>
+        </nav>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuxeryLoom</title>
+    <link rel="icon" type="image/vnd.icon" href="pictures/favicon.ico">
+    <link rel="stylesheet" type="text/css" href="/style.css">
+    <script>
+        // Function to fetch user email if logged in
+        async function getUserEmail() {
+            const response = await fetch('/check-login');
+            const result = await response.json();
+            return result.loggedIn ? result.email : null;
+        }
+
+        // Function to send tracking message with action and product ID
+        async function sendTrackingMessage(action, productId) {
+            const userEmail = await getUserEmail();
+            
+            const response = await fetch('/track', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action, productId, email: userEmail })
+            });
+            const result = await response.json();
+            console.log(result);
+        }
+
+        // Function to add product to cart and track the action
+        function addToCart(productId) {
+            sendTrackingMessage('add_to_cart', productId);
+        }
+
+        // Function to check user login status and update the login navigation item
+        async function checkLogin() {
+            const response = await fetch('/check-login');
+            const data = await response.json();
+            const loginNavItem = document.getElementById('login-nav-item');
+
+            if (data.loggedIn) {
+                loginNavItem.innerHTML = `<a href="#" onclick="logout()">Logout</a>`;
+            } else {
+                loginNavItem.innerHTML = `<a href="/sites/login.html">Login</a>`;
+            }
+        }
+
+        // Function to log out the user and redirect to home page
+        async function logout() {
+            await fetch('/logout');
+            window.location.href = '/';
+        }
+
+        // Function to load products in the user's cart
+        async function loadCartProducts() {
+            const response = await fetch('/cart-products');
+            const data = await response.json();
+            const cartSection = document.getElementById('cart-products-section');
+
+            if (data.loggedIn && data.products.length > 0) {
+                const productHTML = data.products.map(product => `
+                    <li class="product-item">
+                        <div class="product">
+                            <img src="${product.image_url}" alt="${product.name}">
+                            <h2>${product.name}</h2>
+                            <p>${product.description}</p>
+                            <p>$${parseFloat(product.price).toFixed(2)}</p>
+                            <button onclick="addToCart(${product.productID})">Add to Cart</button>
+                        </div>
+                    </li>
+                `).join('');
+
+                cartSection.innerHTML = `
+                    <h3>Zuletzt angesehen</h3>
+                    <hr>
+                    <ul class="product-list">
+                        ${productHTML}
+                    </ul>
+                `;
+                cartSection.style.display = 'block';
+            } else {
+                cartSection.style.display = 'none';
+            }
+        }
+
+        // Function to load the most viewed products
+        async function loadMostViewedProducts() {
+            const response = await fetch('/most-viewed-products');
+            const data = await response.json();
+            const mostViewedSection = document.getElementById('trending');
+
+            if (data.success && data.products.length > 0) {
+                const productHTML = data.products.map(product => `
+                    <li class="product-item">
+                        <div class="product">
+                            <img src="${product.image_url}" alt="${product.name}">
+                            <h2>${product.name}</h2>
+                            <p>${product.description}</p>
+                            <p>$${parseFloat(product.price).toFixed(2)}</p>
+                            <button onclick="addToCart(${product.productID})">Add to Cart</button>
+                        </div>
+                    </li>
+                `).join('');
+
+                mostViewedSection.innerHTML = `
+                    <h3>Trending</h3>
+                    <hr>
+                    <ul class="product-list">
+                        ${productHTML}
+                    </ul>
+                `;
+                mostViewedSection.style.display = 'block';
+            } else {
+                mostViewedSection.innerHTML = `
+                    <h3>Trending</h3>
+                    <hr>
+                    <p class="large-text">Kaufe bei LUXERYLOOM um die Trends von morgen zu gestalten.</p>
+                `;
+                mostViewedSection.style.display = 'block';
+            }
+        }
+
+        // Event listener to initialize functions when the DOM content is loaded
+        document.addEventListener("DOMContentLoaded", function () {
+            checkLogin();
+            loadCartProducts();
+            loadMostViewedProducts();
+
+            const productDivs = document.querySelectorAll(".product");
+            productDivs.forEach(div => {
+                div.addEventListener("click", function (event) {
+                    const target = event.target;
+                    const productId = div.querySelector("button").onclick.arguments[0];
+                    if (target.tagName === 'BUTTON') {
+                        addToCart(productId);
+                    }
+                });
+            });
+        });
+
+        // Function to show feedback popup and reset the form
+        function showFeedbackPopup() {
+            alert('Vielen Dank für Ihr Feedback!');
+            document.getElementById('feedback-form').reset();
+        }
+    </script>
+</head>
+
+<body>
+    <header>
+        <div id="logo">
+            <a href="#">
+                <img src="pictures/Logo.png" alt="Logo">
+            </a>
+        </div>
+       
+        <nav id="main-navigation">
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#trending">Trending</a></li>
+                <li><a href="#products">Produkte</a></li>
+                <li><a href="#contact">Kontakt</a></li>
+                <li id="login-nav-item"><a href="/sites/login.html">Login</a></li>
+            </ul>
+        </nav>
+
+        <div id="headertext">
+            <h1>LuxeryLoom</h1>
+        </div>
+    </header>
+
+    <section id="home">
+        <h1>Where Style</h1>
+        <h2>meets Elegance</h2>
+        <a href="#trending">
+            <img class="pfeil" src="pictures/pfeil.png" alt="Pfeil">
+        </a>
+    </section>
+
+    <section id="trending">
+         <!-- Most viewed products will be dynamically inserted here -->
+    </section>
+
+    <section id="products">
+        <h3>Unsere Produkte</h3>
+        <hr>
+        <div class="container">
+            <ul class="product-list">
+                <!-- PRODUCTS_PLACEHOLDER -->
+            </ul>
+        </div>
+    </section>
+
+    <section id="cart-products-section" style="display:none;">
+        <!-- Cart products will be dynamically inserted here -->
+    </section>
+    
+    <section id="contact">
+        <h3>Kontakt</h3>
+        <hr>
+        <p>Bitte wenden Sie sich bei Fragen an uns</p>
+        <form id="feedback-form" onsubmit="showFeedbackPopup(); return false;">
+          <input class="eingabe" type="email" tabindex="1" placeholder="E-mail"><br>
+          <input class="eingabe" type="text" tabindex="2" placeholder="Betreff"><br>
+          <textarea class="eingabe" tabindex="3" placeholder="Nachricht"></textarea><br>
+          <input class="button" type="submit">
+        </form>
+    </section>
+    
+    <footer>
+        <p>&copy; 2024 LuxeryLoom</p>
+        <nav id="footer-navigation">
+          <ul>
+            <li><a href="sites/impressum.html">Impressum</a></li>
+            <li><a href="sites/datenschutz.html">Datenschutz</a></li>
+          </ul>
+        </nav>
+        <p id="welcome-message"></p>
+    </footer>
+</body>
+</html>

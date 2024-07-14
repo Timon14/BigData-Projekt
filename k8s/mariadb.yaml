@@ -1,0 +1,108 @@
+#Begin: Configmap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mariadb-deployment-init-configmap
+data:
+  mariadb-init.sql: |
+    SET GLOBAL sql_mode = 'ANSI_QUOTES';
+
+    CREATE TABLE `products` (
+      `productID` INT AUTO_INCREMENT,
+      `name` VARCHAR(30) NOT NULL,
+      `description` VARCHAR(5000),
+      `price` DECIMAL(10, 2) NOT NULL,
+      `image_url` VARCHAR(255),
+      PRIMARY KEY (`productID`)
+    );
+
+    
+    CREATE TABLE `popular` (
+      `productID` INT,
+      `count` BIGINT,
+      PRIMARY KEY (`productID`)
+    );
+
+
+    CREATE TABLE `users` (
+      `email` VARCHAR(100),
+      `password_hash` VARCHAR(255) NOT NULL,
+      PRIMARY KEY (`email`)
+    );
+
+
+    CREATE TABLE `detailed_tracking` (
+      `timestamp` DATETIME,
+      `productID` INT,
+      `email` VARCHAR(100),
+      FOREIGN KEY (`email`) REFERENCES `users`(`email`)
+    );
+
+    INSERT INTO products (productID, name, description, price, image_url) VALUES ('1', 'Kurzmantel', 'Antioch', 449.00, 'product_pictures/product_1.png');
+    INSERT INTO products (productID, name, description, price, image_url) VALUES ('2', 'Trenchcoat', 'Mango Tango', 249.00, 'product_pictures/product_2.png');
+    INSERT INTO products (productID, name, description, price, image_url) VALUES ('3', 'Trenchcoat Hugo', 'Hugo Maluk', 399.00, 'product_pictures/product_3.png');
+    INSERT INTO products (productID, name, description, price, image_url) VALUES ('4', 'Garmet Hemd', 'Hackett London', 189.00, 'product_pictures/product_4.png');
+    INSERT INTO products (productID, name, description, price, image_url) VALUES ('5', 'Corduroy Shirt', 'Polo Ralle', 170.00, 'product_pictures/product_5.png');
+    INSERT INTO products (productID, name, description, price, image_url) VALUES ('6', 'Marokkanisches Hemd', 'Waffle Keeper', 129.99, 'product_pictures/product_6.png');
+    INSERT INTO products (productID, name, description, price, image_url) VALUES ('7', 'Kleitos Monk', 'Pero Joop', 234.99, 'product_pictures/product_7.png');
+    INSERT INTO products (productID, name, description, price, image_url) VALUES ('8', 'Slipper', 'Pier One', 821.99, 'product_pictures/product_8.png');
+    INSERT INTO products (productID, name, description, price, image_url) VALUES ('9', 'Sonnenbrille', 'Versace', 449.99, 'product_pictures/product_9.png');
+
+    INSERT INTO users (email, password_hash) VALUES ('user1@example.com', '$2a$10$.ibjuGjGgtxbCL0fX7CoDOx9HQJ2h7tv8jW9MYkNS9OoaP4AGc/W2'); -- password: password1
+    INSERT INTO users (email, password_hash) VALUES ('user2@example.com', '$2a$10$RuEShxNOEaIf3dndfNT7keAYmbIazhNzyfsQkOuHXrtjQOW0v9c9u'); -- password: password2
+    INSERT INTO users (email, password_hash) VALUES ('user3@example.com', '$2a$10$iBxvwCYBugvh9/7ZL58/hux1xGesnE6oNXuHKduhgWGyWSvDuPSue'); -- password: password3
+    INSERT INTO users (email, password_hash) VALUES ('user4@example.com', '$2a$10$Jk9A0NKU33kpsyYlZEf.WOWS5ByXT.nvbOjMqTq5fvZNmNG4tvLxO'); -- password: password4
+    INSERT INTO users (email, password_hash) VALUES ('user5@example.com', '$2a$10$HGWWP1Sf/S56v3S6MTOSJOQ4ewh1i638m2k.3se6aXimkxcc5Ca5u'); -- password: password5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb-deployment
+  labels:
+    app: my-mariadb-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-mariadb
+  template:
+    metadata:
+      labels:
+        app: my-mariadb
+    spec:
+      # Mount the configmap volume
+      # This is an excerpt of deployment.spec.template.spec
+      volumes:
+        - name: init-volume
+          configMap:
+            name: mariadb-deployment-init-configmap
+      containers:
+        - name: my-mariadb
+          image: mariadb
+          volumeMounts:
+            - name: init-volume
+              mountPath: /docker-entrypoint-initdb.d/
+          # Set required environment variables to initialize the container
+          env:
+            - name: MARIADB_ROOT_PASSWORD
+              value: "mysecretpw"
+            - name: MARIADB_DATABASE
+              value: "popular"
+          ports:
+            - containerPort: 3306
+
+---
+#Begin: Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-mariadb-service
+spec:
+  selector:
+    app: my-mariadb
+  ports:
+    - name: mariadb-proto
+      protocol: TCP
+      port: 3306
+      targetPort: 3306
+#End: Service
